@@ -1,0 +1,17 @@
+[package]
+name = "Rendering"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+
+[features]
+default = [ "desktop" ]
+web = [ "instant/wasm-bindgen", "minifb/web" ]
+desktop = [ "minifb/default" ]
+
+[dependencies]
+instant = "0.1.12"
+minifb = "0.27"
