@@ -1,5 +1,6 @@
 use std::fmt::{Display, Formatter};
 use std::io::Cursor;
+use std::iter::once_with;
 use std::ops::{Add, AddAssign, Mul, Sub};
 use std::panic;
 use std::time::Instant;
@@ -28,6 +29,7 @@ impl Renderer {
             let cam_right = self.get_cam_right();
 
             let rotated_pos = cam_right * cam_space_pos.x + cam_forward * cam_space_pos.z + Vector3::UP * cam_space_pos.y;
+            if(rotated_pos.z < 0.0){ continue;}
             let projected_pos_x = rotated_pos.x / rotated_pos.z * &self.projection_plane_distance;
             let projected_pos_y = rotated_pos.y / rotated_pos.z * &self.projection_plane_distance;
             let projected_pos = (projected_pos_x, projected_pos_y);
@@ -261,15 +263,32 @@ fn main() {
         */
 
         let f = 1.0/144.0;
-        const incr: f32 = 0.1;
+        const incr: f32 = 10.0;
+        // I need to invert the x-axis of cam_forward and the z-axis of cam-right for camera movement to work correctly, but I have no clue why
+        let _fwd = renderer.get_cam_forward();
+        let fwd = Vector3::new(-_fwd.x, _fwd.y, _fwd.z);
+        let _rgt = renderer.get_cam_right();
+        let rgt =  Vector3::new(_rgt.x, _rgt.y, -_rgt.z);
+
         renderer.camera_pos +=
-            renderer.get_cam_right() * inc(&window, Key::D, Key::A, incr) * frame_time
-                + renderer.get_cam_forward() * inc(&window, Key::W, Key::S, incr) * frame_time
+            rgt * inc(&window, Key::D, Key::A, incr) * frame_time
+                + fwd * inc(&window, Key::W, Key::S, incr) * frame_time
                 + renderer.get_cam_up() * inc(&window, Key::I, Key::K, incr) * frame_time;
-        renderer.camera_angle += inc(&window, Key::Q, Key::E, 1.0);
+        renderer.camera_angle += inc(&window, Key::Q, Key::E, 100.0) * frame_time;
         renderer.projection_plane_distance += inc(&window, Key::N, Key::M, 0.01);
 
-
+        if window.is_key_released(Key::NumPad4) {
+            renderer.camera_angle += 90.0;
+        }
+        if window.is_key_released(Key::NumPad6) {
+            renderer.camera_angle += -90.0;
+        }
+        if window.is_key_released(Key::NumPad8) {
+            renderer.camera_angle += 0.0;
+        }
+        if window.is_key_released(Key::NumPad2) {
+            renderer.camera_angle += 180.0;
+        }
 
         // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
         window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
@@ -277,5 +296,3 @@ fn main() {
         println!("Frame time: {}ms ({}fps)", frame_time*1000.0, 1.0/frame_time);
     }
 }
-
-
